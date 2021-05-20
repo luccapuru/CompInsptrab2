@@ -1,7 +1,7 @@
 import pandas
 import numpy as np
 import random
-from sklearn import processing
+from sklearn import preprocessing
 
 # def IniciaPesos():
 #     w = np.array([[0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0]])
@@ -29,7 +29,7 @@ def IniciaPesos():
 #     saidaDesejada = {
 #         "Iris-setosa": np.array([1, 0, 0]),
 #         "Iris-versicolor": np.array([0, 1, 0]),
-#         "Iris-virginica": np.array([0, 0, 1])
+#        "Iris-versicolor": np.array([0, 0, 1])
 #     }
 #     return saidaDesejada.get(classeStr, -1)
 
@@ -45,11 +45,11 @@ def SaidaDesejada(classeStr):
 df = pandas.read_csv("iris.data", header=None, names=["SepalLength", "SepalWidth","PetalLength", "PetalWidth", "Class"])
 df2 = pandas.read_csv("wine.data", header=None, names=["Class", "Alcohol", "MalicAcid", "Ash", "AlcalinityAsh", "Magnesium", 
     "TotalPhenol", "Flavanoids", "NonflavanoidPhenols", "Proanthocyanins", "ColorIntensity", "Hue", "OD280/OD315", "Proline"])
-x2 = df2.values #returns a numpy array
-min_max_scaler = preprocessing.MinMaxScaler()
-x_scaled = min_max_scaler.fit_transform(x2)
-df2 = pandas.DataFrame(x_scaled)
-print(df2)
+# x2 = df2.values #returns a numpy array
+# min_max_scaler = preprocessing.MinMaxScaler()
+# x_scaled = min_max_scaler.fit_transform(x2)
+# df2 = pandas.DataFrame(x_scaled)
+# print(df2)
 
 #print(df, df.count())
 #print(df.sample(frac=0.7).reset_index(drop=True))
@@ -77,26 +77,30 @@ print("x", x)
 
 taxaApren = 0.5
 w = IniciaPesos()
-print("w", w)
+#print("w", w)
 y = w.dot(x)
 print("y", y)
-for j in range(len(y)):
-    if y[j] > 0:
-        y[j] = 1
-    else:
-        y[j] = 0
-print("y2", y)
-y = y.transpose()
-e = np.subtract(SaidaDesejada(train["Class"][0]), y)
-print(SaidaDesejada(train["Class"][0]))
-print("e", e)
-e = e.transpose()
-# print("e2", e.transpose())
-aux = taxaApren * e.dot(x.transpose())
-print("aux", aux)
-w = np.add(w, taxaApren * e.dot(x.transpose()))
-print("w2", w)
-E = 0
-for i in range(len(e)):
-    E += float(e[i]**2)
-print("E", E)
+print("ARGMAX", np.argmax(y))
+ymax  = np.argmax(y)
+print(SaidaDesejada(ymax+1))
+# print("y", y)
+# for j in range(len(y)):
+#     if y[j] > 0:
+#         y[j] = 1
+#     else:
+#         y[j] = 0
+# print("y2", y)
+# y = y.transpose()
+# e = np.subtract(SaidaDesejada(train["Class"][0]), y)
+# print(SaidaDesejada(train["Class"][0]))
+# print("e", e)
+# e = e.transpose()
+# # print("e2", e.transpose())
+# aux = taxaApren * e.dot(x.transpose())
+# print("aux", aux)
+# w = np.add(w, taxaApren * e.dot(x.transpose()))
+# print("w2", w)
+# E = 0
+# for i in range(len(e)):
+#     E += float(e[i]**2)
+# print("E", E)
