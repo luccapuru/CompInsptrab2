@@ -7,8 +7,7 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
 import matplotlib
 
-#df = pandas.read_csv("iris.data", header=None, names=["SepalLength", "SepalWidth","PetalLength", "PetalWidth", "Class"])
-
+#Retorna o vetor com o valor esperado de y para cada classe
 def SaidaDesejada(classe):
     saidaDesejada = {
         "Iris-setosa": np.array([1, 0, 0]),
@@ -20,39 +19,37 @@ def SaidaDesejada(classe):
     }
     return saidaDesejada.get(classe, -1)
 
-# def SaidaInvertida(classe):
-#     saidaInvertida = {
-#         "Iris-setosa": 1,
-#         "Iris-versicolor": 2,
-#         "Iris-virginica": 3,
-#         # 1: "Iris-setosa",
-#         # 2: "Iris-versicolor",
-#         # 3: "Iris-virginica"
-#     }
-#     return saidaInvertida.get(classe, -1)
-
-
+#Abre o arquivo do dataset e normaliza as colunas
 def AbrirDados(fileName):
+    #Abrindo o arquivo e armazenando em um dataframe
     df = pandas.read_csv(fileName, header=None, 
     names=["SepalLength", "SepalWidth","PetalLength", "PetalWidth", "Class"])
+    #normaliza os dados do dataframe
     min_max_scaler = preprocessing.MinMaxScaler()
     df[["SepalLength", "SepalWidth","PetalLength", "PetalWidth"]] = min_max_scaler.fit_transform(df[["SepalLength", "SepalWidth","PetalLength", "PetalWidth"]])
     return df
 
+#Inicia a matriz de pesos com valores entre -0.01 e 0.01
 def IniciaPesos():
+    #Inicia os pesos com 0
     w = np.array([[0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0]])
+    #gera valores aleatorios e atribui a cada posicao da matriz
     for i in range(len(w)):
         for j in range(len(w[i])):
             w[i, j] = random.uniform(-0.01, 0.01)
     return w
 
+#Separa o dataset em conjuntos de treinamento, validacao e teste
 def SeperarDados(df):
+    #separacao dos conjuntos de dados em subconjuntos de treinamento
     train, validate, test = np.split(df.sample(frac=1), [int(.7*len(df)), int(.85*len(df))])
+    #resetando os indices
     test = test.reset_index(drop=True)
     validate = validate.reset_index(drop=True)
     train = train.reset_index(drop=True)
     return train, validate, test
 
+#Realiza o treinamento e a validacao
 def Treino(maxt, taxaApren, train, validate):
     #Iniciando parametros
     k = 100 #contador para o criterio de parada da validacao
@@ -71,7 +68,6 @@ def Treino(maxt, taxaApren, train, validate):
     bestacval = 0
     bestactrein = 0
     
-
     Egraph = [] #lista para a posterior criacao do grafico de convergencia do erro
     acertos = 0 #contador de acertos para calculo da acuracia
     
@@ -82,12 +78,12 @@ def Treino(maxt, taxaApren, train, validate):
         Ev = 0
         acertos = 0
         ypred = []
-        ytrue = []
+        ytrue = [] #zernado valores para a iteracao
         for i in range(train["Class"].count()):
             somaErro = 0
             x = np.array([[1], [train["SepalLength"][i]], [train["SepalWidth"][i]], 
-            [train["PetalLength"][i]], [train["PetalWidth"][i]]])
-            y = w.dot(x)
+            [train["PetalLength"][i]], [train["PetalWidth"][i]]]) #montagem do vetor x
+            y = w.dot(x) #calculo de y pela multiplicacao de w por x 
 
             #matriz de confusao
             ymax  = np.argmax(y)
@@ -100,37 +96,36 @@ def Treino(maxt, taxaApren, train, validate):
                 else:
                     y[j] = 0
             y = y.transpose()
-            e = np.subtract(SaidaDesejada(train["Class"][i]), y)
-            e = e.transpose()
-            #print("e", e)
-            w = np.add(w, taxaApren * e.dot(x.transpose()))
+            e = np.subtract(SaidaDesejada(train["Class"][i]), y) #calculo do erro
+            e = e.transpose() 
+            w = np.add(w, taxaApren * e.dot(x.transpose())) #atualizacao dos pesos
+            #calculo do erro acumulado
             for i in range(len(e)):
                 somaErro += float(e[i]**2)
                 E += float(e[i]**2)
+            #incrementa o contador de acertos
             if somaErro == 0:
                 acertos += 1
-        Egraph.append(E)
-        acuracia = acertos/train["Class"].count()
-        # print("acu1", acuracia)
-        # print("acertos trein", acertos)
+        Egraph.append(E) #salvando valor dos erros para o grafico
+        acuracia = acertos/train["Class"].count() #calculo da acuracia do treinamento desta epoca
         acertos = 0
         t += 1
+        #salvando a melhor matriz de peso
         if E < bestE:
-            bestE = E
-            bestt = t
+            # bestt = t
             bestw = copy.deepcopy(w)
             bestE = E
         #Fim treino
         
+        #montagem da matriz de confusao caso a acuracia tenha melhorado (salvar a melhor)
         if acuracia > bestactrein:
             bestactrein = acuracia
-            # print("ypred", ypred)
-            # print("ytrue", ytrue) 
             disptrain = ConfusionMatrixDisplay(confusion_matrix(ytrue, ypred), display_labels = ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]) 
 
         #Validacao
         ypred = []
         ytrue = []
+        #Calcula o desempenho do perceptron no subconjunto de validacao
         for i in range(validate["Class"].count()):
             somaErro = 0
             x = np.array([[1], [validate["SepalLength"][i]], [validate["SepalWidth"][i]], 
@@ -150,45 +145,36 @@ def Treino(maxt, taxaApren, train, validate):
             y = y.transpose()
             e = np.subtract(SaidaDesejada(validate["Class"][i]), y)
             e = e.transpose()
-            #print("e", e)
-            #w = np.add(w, taxaApren * e.dot(x.transpose()))
             for i in range(len(e)):
                 somaErro += float(e[i]**2)
                 Ev += float(e[i]**2)
-            #print("somaErro", somaErro)
             if somaErro == 0:
-                #print("Acerto!")
                 acertos += 1
-        # print("EV:", Ev)
-        # print("E", bestE)
         acuracia = acertos/validate["Class"].count()
-        # print("acertos val", acertos)
-        # print("acu2", acuracia)
+        #Se a acuracia nao melhorou, decrementa a variavel k. Se a variavel k chegar a zero a execucao eh interrompida 
         if acuracia > bestacval:
             bestacval = acuracia
             k = kaux
             dispval = ConfusionMatrixDisplay(confusion_matrix(ytrue, ypred), display_labels = ["Iris-setosa", "Iris-versicolor", "Iris-virginica"])
         else: 
             k -= 1
-        # print("k", k)
-    #return w, bestw, E, bestE, t, bestt
-    # print("bestactrein", bestactrein, "bestacval", bestacval)
+        
+    #plotando grafico do erro
+    fig, ax = plt.subplots()
+    ax.plot(range(len(Egraph)), Egraph, label = "Erro acumulado")
+    ax.set_xlabel("Épocas")  
+    ax.set_ylabel("Erro")
+    ax.legend()
+    matplotlib.pyplot.savefig("teste2")
 
-    #plotar grafico do erro
-    # fig, ax = plt.subplots()
-    # ax.plot(range(len(Egraph)), Egraph, label = "Erro acumulado")
-    # ax.set_xlabel("Épocas")  
-    # ax.set_ylabel("Erro")
-    # ax.legend()
-    # matplotlib.pyplot.savefig("teste")
-
-    #Matriz Confusao
-    # disptrain.plot()
-    # matplotlib.pyplot.savefig("train1")
-    # dispval.plot()
-    # matplotlib.pyplot.savefig("val1")
+    #plotando matrizes de confusao
+    disptrain.plot()
+    matplotlib.pyplot.savefig("train2")
+    dispval.plot()
+    matplotlib.pyplot.savefig("val2")
     return bestw, bestactrein, bestacval
 
+#Realiza o Teste (processo semelhante ao treinamento)
 def Teste(w, test):
     E = 0
     acertos = 0
@@ -212,59 +198,58 @@ def Teste(w, test):
         y = y.transpose()
         e = np.subtract(SaidaDesejada(test["Class"][i]), y)
         e = e.transpose()
-        #print("e", e)
-        #w = np.add(w, taxaApren * e.dot(x.transpose()))
         for i in range(len(e)):
             somaErro += float(e[i]**2)
             E += float(e[i]**2)
         if somaErro == 0:
             acertos += 1
     acuracia = acertos/test["Class"].count()
-    # print("acu3", acuracia)
-    # print("acertos teste", acertos)
 
-    #Matriz de confusao
-    # disptest = ConfusionMatrixDisplay(confusion_matrix(ytrue, ypred), display_labels = ["Iris-setosa", "Iris-versicolor", "Iris-virginica"])
-    # disptest.plot()
-    # matplotlib.pyplot.savefig("test1")
+    #Plotando Matriz de confusao
+    disptest = ConfusionMatrixDisplay(confusion_matrix(ytrue, ypred), display_labels = ["Iris-setosa", "Iris-versicolor", "Iris-virginica"])
+    disptest.plot()
+    matplotlib.pyplot.savefig("test1")
+
     return acuracia
 
-
-#print(Perceptron("iris.data", 1000, 0.01))
 
 maxt = input("Digite o numero maximo de iteracoes: ")
 #fileName = input("Digite o nome do arquivo: ")
 fileName = "iris.data"
-#taxaApren = input("Digite a taxa de Aprendizado: ")
+taxaApren = input("Digite a taxa de Aprendizado: ")
 df = AbrirDados(fileName)
 train, validate, test = SeperarDados(df)
-#bestw, actrein, acval = Treino(int(maxt), float(taxaApren), train, validate)
-#Teste(bestw, test)
+bestw, actrein, acval = Treino(int(maxt), float(taxaApren), train, validate)
+actest = Teste(bestw, test)
+print("W final:\n", bestw)
+print("Acuracia do treino:", actrein)
+print("Acuracia do validacao:", acval)
+print("Acuracia do teste:", actest)
 
 
-#Teste de variacao de parametros
-taxaApren = [0.01, 0.1, 0.5]
-actreinlist = []
-acvallist = []
-actestlist = []
-actreinMedia = []
-acvalMedia = []
-actestMedia = []
-for i in taxaApren:
-    print("teste")
-    for j in range(100):
-        bestw, actrein, acval = Treino(int(maxt), i, train, validate)
-        actest = Teste(bestw, test)
-        actreinlist.append(actrein)
-        acvallist.append(acval)
-        actestlist.append(actest)
-    actreinMedia.append(sum(actreinlist)/len(actreinlist))
-    acvalMedia.append(sum(acvallist)/len(acvallist))
-    actestMedia.append(sum(actestlist)/len(actestlist))
+# #Teste de variacao de parametros
+# taxaApren = [0.01, 0.1, 0.5]
+# actreinlist = []
+# acvallist = []
+# actestlist = []
+# actreinMedia = []
+# acvalMedia = []
+# actestMedia = []
+# for i in taxaApren:
+#     print("teste")
+#     for j in range(100):
+#         bestw, actrein, acval = Treino(int(maxt), i, train, validate)
+#         actest = Teste(bestw, test)
+#         actreinlist.append(actrein)
+#         acvallist.append(acval)
+#         actestlist.append(actest)
+#     actreinMedia.append(sum(actreinlist)/len(actreinlist))
+#     acvalMedia.append(sum(acvallist)/len(acvallist))
+#     actestMedia.append(sum(actestlist)/len(actestlist))
 
-f = open("exp1.txt", "a")
-f.write("Acuracia Treino, " + str(actreinMedia) + "\t")
-f.write("Acuracia Validacao, " + str(acvalMedia) + "\n")
-f.write("Acuracia Teste, " + str(actestMedia) + "\n")
-f.close()
+# f = open("exp1.txt", "a")
+# f.write("Acuracia Treino, " + str(actreinMedia) + "\t")
+# f.write("Acuracia Validacao, " + str(acvalMedia) + "\n")
+# f.write("Acuracia Teste, " + str(actestMedia) + "\n")
+# f.close()
     
