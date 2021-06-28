@@ -14,11 +14,24 @@ model.add(Dense(1, activation='sigmoid'))
 # compile the keras model
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 # fit the keras model on the dataset
-model.fit(X, y, epochs=150, batch_size=10)
-# evaluate the keras model
+model.fit(X, y, epochs=150, batch_size=10, verbose = 0)
 _, accuracy = model.evaluate(X, y)
+# evaluate the keras model
 print('Accuracy: %.2f' % (accuracy*100))
+# acuracia = []
 
+# for i in range(100):
+# 	print(i)
+# 	model.fit(X, y, epochs=150, batch_size=10, verbose = 0)
+# 	_, accuracy = model.evaluate(X, y)
+# 	acuracia.append(accuracy)
+# 	print('Accuracy: %.2f' % (accuracy*100))
+
+# acuraciaMedia = sum(acuracia)/len(acuracia)
+# print('AccuracyMed: %.2f' % (acuraciaMedia*100))
+
+print(len(y))
+print(len(dataset))
 predictions = model.predict_classes(X)
 # summarize the first 5 cases
 for i in range(5):
